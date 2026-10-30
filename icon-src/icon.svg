@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#1f5fa8"/>
+  <!-- baan van boven gezien -->
+  <g fill="none" stroke="#ffffff" stroke-width="16" stroke-linejoin="round">
+    <rect x="146" y="96" width="220" height="320" rx="10"/>
+    <line x1="146" y1="256" x2="366" y2="256" stroke-width="12"/>
+    <line x1="146" y1="166" x2="366" y2="166" stroke-width="8"/>
+    <line x1="146" y1="346" x2="366" y2="346" stroke-width="8"/>
+    <line x1="256" y1="166" x2="256" y2="346" stroke-width="8"/>
+  </g>
+  <!-- druppel -->
+  <path d="M352 236 C352 236 300 300 300 334 a52 52 0 0 0 104 0 C404 300 352 236 352 236 Z" fill="#8fd4ff" stroke="#1f5fa8" stroke-width="12"/>
+</svg>
