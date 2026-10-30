@@ -362,13 +362,14 @@ function nowKey() {
 }
 
 function explainGlass(r) {
+  const t = `Glas ±${f1(r.tg)}°C, dauwpunt ${f1(r.Td)}°C`;
   if (r.glass === 2) return r.margin < 0
-    ? `Glas ${f1(-r.margin)}°C onder het dauwpunt: het blijft condens pakken.`
-    : `Er zit nog vocht op het glas; het droogt langzaam.`;
+    ? `${t}: het glas is ${f1(-r.margin)}°C kouder dan het dauwpunt en pakt condens.`
+    : `${t}. Er zit nog vocht op het glas; het droogt langzaam.`;
   if (r.glass === 1) return r.margin < TUNE.glassMargin
-    ? `Glas zit maar ${f1(Math.max(0, r.margin))}°C boven het dauwpunt. Kan beslaan.`
-    : `Lichte vochtfilm op het glas, droogt op.`;
-  return `Glas ${f1(r.margin)}°C boven het dauwpunt.`;
+    ? `${t}: maar ${f1(Math.max(0, r.margin))}°C verschil, het glas kan beslaan.`
+    : `${t}. Lichte vochtfilm op het glas, droogt op.`;
+  return `${t}: ${f1(r.margin)}°C marge, het glas blijft droog.`;
 }
 function explainCourt(r) {
   if (r.court === 2) return r.p > 0.05 ? `Er valt ${f1(r.p)} mm regen.` : `Er staat nog ±${f1(r.water)} mm water in de baan.`;
