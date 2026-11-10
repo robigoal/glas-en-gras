@@ -1,5 +1,5 @@
 // Glas & Gras: app-bestanden offline beschikbaar, weerdata altijd eerst van het netwerk
-const CACHE = "glas-en-gras-927c702bde";
+const CACHE = "glas-en-gras-5acedf43c6";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

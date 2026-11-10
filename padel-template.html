@@ -272,33 +272,37 @@ const STANDALONE = __STANDALONE__;
 const DIRECT = STANDALONE || location.protocol === "file:" || /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
 
 // Afstelknoppen: na een paar keer spelen bijstellen
+// Afgesteld 10-11: in de praktijk waren glas en baan vaker nat dan voorspeld
 const TUNE = {
   glassK: 0.35,          // hoe snel het glas de lucht volgt (per uur)
   glassKWind: 0.02,      // extra volgsnelheid per km/h wind
-  radCool: 2.5,          // max. extra afkoeling glas bij heldere, windstille nacht (°C)
+  radCool: 3.0,          // max. extra afkoeling glas bij heldere, windstille nacht (°C)
   solarGain: 0.006,      // opwarming glas per W/m² zon (°C)
   glassH: 0.06,          // condens/verdamping per hPa dampdrukverschil per uur
+  glassDry: 0.75,        // opdrogen gaat trager dan beslaan (factor op verdamping)
   glassRainWet: 0.3,     // vochtfilm op glas per mm regen
-  glassWet: 0.2,         // film vanaf "nat"
-  glassRisk: 0.04,       // film vanaf "kans op beslaan"
-  glassMargin: 0.8,      // glas binnen zoveel °C van het dauwpunt = kans op beslaan
+  glassWet: 0.15,        // film vanaf "nat"
+  glassRisk: 0.03,       // film vanaf "kans op beslaan"
+  glassMargin: 1.0,      // glas binnen zoveel °C van het dauwpunt = kans op beslaan
   courtHold: 1.0,        // mm water die de baan vasthoudt voor afvoer
   courtDrain: 0.6,       // deel van het teveel dat per uur wegloopt
-  courtEvap: 1.2,        // factor op referentieverdamping
-  courtVpd: 0.01,        // minimale verdamping per hPa dampdruktekort
-  courtDew: 0.04,        // dauw per °C onder dauwpunt (mm/uur)
+  courtEvap: 0.9,        // factor op referentieverdamping
+  courtVpd: 0.007,       // minimale verdamping per hPa dampdruktekort
+  courtDew: 0.05,        // dauw per °C onder dauwpunt (mm/uur)
+  courtDewMax: 0.06,     // max. dauw per uur (mm)
   courtWet: 0.3,         // mm vanaf "nat"
-  courtDamp: 0.08,       // mm vanaf "vochtig"
+  courtDamp: 0.06,       // mm vanaf "vochtig"
 };
 
 const es = t => 6.112 * Math.exp(17.62 * t / (243.12 + t)); // verzadigingsdampdruk hPa
 
 function simulate(h) {
-  let n = h.time.length; const out = [];
-  while (n > 0 && h.temperature_2m[n - 1] == null) n--; // lege uren aan het eind overslaan
-  let tg = h.temperature_2m[0], film = 0, water = 0;
-  for (let i = 0; i < n; i++) {
+  const out = [];
+  let tg = null, film = 0, water = 0;
+  for (let i = 0; i < h.time.length; i++) {
     const T = h.temperature_2m[i], Td = h.dew_point_2m[i], w = h.wind_speed_10m[i] ?? 0;
+    if (T == null || Td == null) continue; // uren zonder weerdata overslaan
+    if (tg === null) tg = T;
     const sw = h.shortwave_radiation[i] ?? 0, p = h.precipitation[i] ?? 0, cc = h.cloud_cover[i] ?? 100;
     const clear = 1 - cc / 100, damp = 1 / (1 + w / 10);
     const night = sw < 5;
@@ -308,7 +312,8 @@ function simulate(h) {
     const k = Math.min(0.8, TUNE.glassK + TUNE.glassKWind * w);
     tg += k * (target - tg);
     const drive = es(tg) - es(Td); // >0 verdampt, <0 condenseert
-    film -= TUNE.glassH * (1 + w / 10) * drive;
+    const rate = TUNE.glassH * (1 + w / 10) * drive;
+    film -= rate > 0 ? rate * TUNE.glassDry : rate;
     film += TUNE.glassRainWet * Math.min(p, 2);
     film = Math.max(0, Math.min(1, film));
     const margin = tg - Td;
@@ -318,7 +323,7 @@ function simulate(h) {
     water += p;
     if (night) {
       const ts = T - 3 * clear * damp;
-      if (ts < Td) water += Math.min(0.05, TUNE.courtDew * (Td - ts));
+      if (ts < Td) water += Math.min(TUNE.courtDewMax, TUNE.courtDew * (Td - ts));
     }
     const vpd = Math.max(0, es(T) - es(Td));
     water -= Math.max((h.et0_fao_evapotranspiration[i] ?? 0) * TUNE.courtEvap, TUNE.courtVpd * vpd * (1 + w / 10));
